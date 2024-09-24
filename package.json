@@ -12,5 +12,8 @@
     "express-fileupload": "^1.2.1",
     "pino": "^6.13.0",
     "qrcode": "^1.4.4"
+  },
+  "engines": {
+    "node": ">=16.x"
   }
 }
