@@ -46,9 +46,9 @@ app.post("/pair", async (req, res) => {
         // Request pairing code
         let code = await MznKing.requestPairingCode(phoneNumber);
         code = code?.match(/.{1,4}/g)?.join("-") || code;
-        res.send(`Your pairing code: ${code}`);
+        res.send(`Your pairing code: ${code}`); // Send pairing code back
     } catch (error) {
-        console.error("Error:", error.stack || error); // Log stack for more details
+        console.error("Error:", error.stack || error);
         res.status(500).send("Error generating pairing code");
     }
 });
