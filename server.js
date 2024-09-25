@@ -1,5 +1,5 @@
 const express = require("express");
-const { makeWASocket } = require("@whiskeysockets/baileys");
+const { makeWASocket, fetchLatestBaileysVersion, useMultiFileAuthState, makeCacheableSignalKeyStore } = require("@whiskeysockets/baileys");
 const fs = require("fs");
 const path = require("path");
 const bodyParser = require("body-parser");
@@ -20,8 +20,14 @@ app.get("/", (req, res) => {
 });
 
 app.post("/pair", async (req, res) => {
-  const phoneNumber = req.body.phoneNumber;
+  const phoneNumber = req.body.phoneNumber.trim();
   const pairingCode = !!phoneNumber;
+
+  // Validate phone number format
+  const phoneRegex = /^\+\d{1,15}$/; // Basic regex for international phone numbers
+  if (!phoneRegex.test(phoneNumber)) {
+    return res.status(400).send("Invalid phone number format. Please use the format: +1234567890");
+  }
 
   try {
     const { version } = await fetchLatestBaileysVersion();
@@ -36,13 +42,14 @@ app.post("/pair", async (req, res) => {
       },
     });
 
+    // Request pairing code
     if (pairingCode) {
       let code = await MznKing.requestPairingCode(phoneNumber);
       code = code?.match(/.{1,4}/g)?.join("-") || code;
       res.send(`Your pairing code: ${code}`);
     }
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error:", error.stack || error); // Log stack for more details
     res.status(500).send("Error generating pairing code");
   }
 });
