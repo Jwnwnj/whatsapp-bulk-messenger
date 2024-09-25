@@ -3,50 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Bulk Messenger</title>
+    <title>WhatsApp Messenger</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            margin-top: 20px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <h1>WhatsApp Bulk Messenger</h1>
-    <form id="messageForm" enctype="multipart/form-data">
-        <label for="userNumber">Your WhatsApp Number:</label><br>
-        <input type="text" id="userNumber" name="userNumber" required><br>
+    <h1>WhatsApp Messenger</h1>
 
-        <label for="targetNumber">Target WhatsApp Number:</label><br>
-        <input type="text" id="targetNumber" name="targetNumber" required><br>
-
-        <label for="intervalTime">Interval between messages (seconds):</label><br>
-        <input type="number" id="intervalTime" name="intervalTime" required><br>
-
-        <label for="messageFile">Upload Message File:</label><br>
-        <input type="file" id="messageFile" name="messageFile" accept=".txt" required><br><br>
-
-        <button type="submit">Submit</button>
+    <h2>Login</h2>
+    <form id="loginForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        <br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <br>
+        <button type="submit">Login</button>
     </form>
 
-    <h2>Scan QR Code to Connect WhatsApp</h2>
-    <div id="qrCodeContainer">
-        <p>QR Code will be displayed here after form submission.</p>
+    <div id="messageSection" class="hidden">
+        <h2>Send Messages</h2>
+        <form id="messageForm">
+            <label for="targetNumber">Target Number:</label>
+            <input type="text" id="targetNumber" name="targetNumber" required>
+            <br>
+            <label for="intervalTime">Interval Time (seconds):</label>
+            <input type="number" id="intervalTime" name="intervalTime" required>
+            <br>
+            <label for="messagesFile">Messages File:</label>
+            <input type="file" id="messagesFile" name="messagesFile" accept=".txt" required>
+            <br>
+            <button type="submit">Send Messages</button>
+        </form>
+        <canvas id="qrCanvas" class="hidden"></canvas>
     </div>
 
     <script>
-        document.getElementById('messageForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData(e.target);
+        const loginForm = document.getElementById('loginForm');
+        const messageSection = document.getElementById('messageSection');
+        const qrCanvas = document.getElementById('qrCanvas');
 
-            const response = await fetch('/submit', {
+        // Handle login form submission
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent form submission
+            const formData = new FormData(loginForm);
+            const response = await fetch('/login', {
                 method: 'POST',
-                body: formData
+                body: formData,
             });
-
-            const result = await response.json();
-            const qrCodeContainer = document.getElementById('qrCodeContainer');
-
-            if (result.qrCode) {
-                // Display the QR code as an image
-                qrCodeContainer.innerHTML = `<img src="${result.qrCode}" alt="QR Code" />`;
+            if (response.ok) {
+                loginForm.classList.add('hidden'); // Hide the login form
+                messageSection.classList.remove('hidden'); // Show message section
             } else {
-                qrCodeContainer.innerHTML = `<p>Failed to generate QR code.</p>`;
+                alert('Login failed! Please check your credentials.');
+            }
+        });
+
+        // Handle message form submission
+        const messageForm = document.getElementById('messageForm');
+        messageForm.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent form submission
+            const formData = new FormData(messageForm);
+            const response = await fetch('/start', {
+                method: 'POST',
+                body: formData,
+            });
+            if (response.ok) {
+                // Generate QR code after successfully starting message sending
+                const qr = new QRious({
+                    element: qrCanvas,
+                    value: 'Your QR code URL here', // Replace with the actual URL if needed
+                    size: 200 // Size of the QR code
+                });
+                qrCanvas.classList.remove('hidden'); // Show QR code canvas
+            } else {
+                alert('An error occurred while sending messages.');
             }
         });
     </script>
