@@ -3,98 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Messenger</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            font-family: Arial, sans-serif;
-        }
-        canvas {
-            margin-top: 20px;
-        }
-        .hidden {
-            display: none;
-        }
-    </style>
+    <title>WhatsApp Pairing</title>
 </head>
 <body>
-    <h1>WhatsApp Messenger</h1>
-
-    <h2>Login</h2>
-    <form id="loginForm">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required>
-        <br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
-        <br>
-        <button type="submit">Login</button>
+    <h1>WhatsApp Pairing Code Generator</h1>
+    <form action="/pair" method="POST">
+        <label for="phoneNumber">Enter your WhatsApp number:</label>
+        <input type="text" id="phoneNumber" name="phoneNumber" required placeholder="+94771227821">
+        <button type="submit">Get Pairing Code</button>
     </form>
-
-    <div id="messageSection" class="hidden">
-        <h2>Send Messages</h2>
-        <form id="messageForm">
-            <label for="targetNumber">Target Number:</label>
-            <input type="text" id="targetNumber" name="targetNumber" required>
-            <br>
-            <label for="intervalTime">Interval Time (seconds):</label>
-            <input type="number" id="intervalTime" name="intervalTime" required>
-            <br>
-            <label for="messagesFile">Messages File:</label>
-            <input type="file" id="messagesFile" name="messagesFile" accept=".txt" required>
-            <br>
-            <button type="submit">Send Messages</button>
-        </form>
-        <canvas id="qrCanvas" class="hidden"></canvas>
-    </div>
-
-    <script>
-        const loginForm = document.getElementById('loginForm');
-        const messageSection = document.getElementById('messageSection');
-        const qrCanvas = document.getElementById('qrCanvas');
-
-        // Handle login form submission
-        loginForm.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Prevent form submission
-            const formData = new FormData(loginForm);
-            const response = await fetch('/login', {
-                method: 'POST',
-                body: formData,
-            });
-            if (response.ok) {
-                loginForm.classList.add('hidden'); // Hide the login form
-                messageSection.classList.remove('hidden'); // Show message section
-            } else {
-                alert('Login failed! Please check your credentials.');
-            }
-        });
-
-        // Handle message form submission
-        const messageForm = document.getElementById('messageForm');
-        messageForm.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Prevent form submission
-            const formData = new FormData(messageForm);
-            const response = await fetch('/start', {
-                method: 'POST',
-                body: formData,
-            });
-            if (response.ok) {
-                // Generate QR code after successfully starting message sending
-                const qr = new QRious({
-                    element: qrCanvas,
-                    value: 'Your QR code URL here', // Replace with the actual URL if needed
-                    size: 200 // Size of the QR code
-                });
-                qrCanvas.classList.remove('hidden'); // Show QR code canvas
-            } else {
-                alert('An error occurred while sending messages.');
-            }
-        });
-    </script>
 </body>
 </html>
