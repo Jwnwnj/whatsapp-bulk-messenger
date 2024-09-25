@@ -3,14 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Pairing</title>
+    <title>WhatsApp Bot</title>
 </head>
 <body>
-    <h1>WhatsApp Pairing Code Generator</h1>
-    <form action="/pair" method="POST">
-        <label for="phoneNumber">Enter your WhatsApp number:</label>
-        <input type="text" id="phoneNumber" name="phoneNumber" required placeholder="+94771227821">
+    <h1>WhatsApp Bot</h1>
+    
+    <h2>Generate Pairing Code</h2>
+    <form id="pairForm" method="POST" action="/pair">
+        <label for="phoneNumber">WhatsApp Number:</label>
+        <input type="text" id="phoneNumber" name="phoneNumber" required placeholder="+1234567890">
         <button type="submit">Get Pairing Code</button>
     </form>
+
+    <h2>Send Message</h2>
+    <form id="messageForm" method="POST" action="/send-message">
+        <label for="targetNumber">Target Number:</label>
+        <input type="text" id="targetNumber" name="targetNumber" required placeholder="+1234567890">
+        
+        <label for="message">Message:</label>
+        <textarea id="message" name="message" required></textarea>
+        
+        <label for="intervalTime">Interval (seconds):</label>
+        <input type="number" id="intervalTime" name="intervalTime" required min="1">
+        
+        <button type="submit">Start Sending Message</button>
+    </form>
+
+    <div id="response"></div>
+
+    <script>
+        // You can add JavaScript here for better UX if needed.
+    </script>
 </body>
 </html>
