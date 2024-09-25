@@ -3,36 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Bot</title>
+    <title>WhatsApp Message Sender</title>
 </head>
 <body>
-    <h1>WhatsApp Bot</h1>
-    
-    <h2>Generate Pairing Code</h2>
-    <form id="pairForm" method="POST" action="/pair">
-        <label for="phoneNumber">WhatsApp Number:</label>
-        <input type="text" id="phoneNumber" name="phoneNumber" required placeholder="+1234567890">
-        <button type="submit">Get Pairing Code</button>
+    <h1>WhatsApp Pairing Code Generator</h1>
+    <form id="pairingForm" action="/pair" method="post">
+        <label for="phoneNumber">Phone Number:</label>
+        <input type="text" id="phoneNumber" name="phoneNumber" placeholder="+1234567890" required>
+        <button type="submit">Generate Pairing Code</button>
     </form>
 
-    <h2>Send Message</h2>
-    <form id="messageForm" method="POST" action="/send-message">
+    <div id="pairingCode" style="display:none;">
+        <h2>Pairing Code</h2>
+        <p id="code"></p>
+    </div>
+
+    <h1>Send Message</h1>
+    <form id="messageForm" action="/send-message" method="post" style="display:none;">
         <label for="targetNumber">Target Number:</label>
-        <input type="text" id="targetNumber" name="targetNumber" required placeholder="+1234567890">
-        
+        <input type="text" id="targetNumber" name="targetNumber" placeholder="+1234567890" required>
+
         <label for="message">Message:</label>
         <textarea id="message" name="message" required></textarea>
-        
-        <label for="intervalTime">Interval (seconds):</label>
-        <input type="number" id="intervalTime" name="intervalTime" required min="1">
-        
-        <button type="submit">Start Sending Message</button>
+
+        <label for="intervalTime">Interval (in seconds):</label>
+        <input type="number" id="intervalTime" name="intervalTime" min="1" value="1" required>
+
+        <button type="submit">Send Message</button>
     </form>
 
-    <div id="response"></div>
-
     <script>
-        // You can add JavaScript here for better UX if needed.
+        // Handle pairing code generation response
+        const pairingForm = document.getElementById('pairingForm');
+        pairingForm.onsubmit = async (event) => {
+            event.preventDefault();
+            const formData = new FormData(pairingForm);
+            const response = await fetch(pairingForm.action, {
+                method: pairingForm.method,
+                body: formData
+            });
+            const text = await response.text();
+            document.getElementById('code').innerText = text;
+            document.getElementById('pairingCode').style.display = 'block';
+
+            // Show the message form after generating pairing code
+            document.getElementById('messageForm').style.display = 'block';
+        };
     </script>
 </body>
 </html>
