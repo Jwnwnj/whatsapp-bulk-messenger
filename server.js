@@ -1,93 +1,77 @@
-const express = require("express");
-const { makeWASocket, fetchLatestBaileysVersion, useMultiFileAuthState, makeCacheableSignalKeyStore } = require("@whiskeysockets/baileys");
-const fs = require("fs");
-const path = require("path");
-const bodyParser = require("body-parser");
-const NodeCache = require("node-cache");
-const Pino = require("pino");
+import express from 'express';
+import bodyParser from 'body-parser';
+import { makeWASocket } from '@whiskeysockets/baileys';
+import fs from 'fs';
+import pino from 'pino';
+import { delay, useMultiFileAuthState, fetchLatestBaileysVersion, jidNormalizedUser, makeCacheableSignalKeyStore } from '@whiskeysockets/baileys';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
-const sessionDir = path.join(__dirname, "session");
-const cache = new NodeCache();
-let MznKing; // Store the WASocket instance globally
-
+// Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static("public"));
+app.use(bodyParser.json());
+app.use(express.static('public')); // Serve static files (HTML, CSS)
 
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
+// Global Variables
+let MznKing; // WhatsApp socket instance
+let phoneNumber;
+
+// Serve the HTML form for input
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html'); // Create an index.html file for input
 });
 
-// Route to handle pairing code generation
-app.post("/pair", async (req, res) => {
-    const phoneNumber = req.body.phoneNumber.trim();
+// Endpoint to handle WhatsApp number submission
+app.post('/submit-phone', async (req, res) => {
+  phoneNumber = req.body.phoneNumber; // Get the phone number from the form
+  try {
+    const { version, isLatest } = await fetchLatestBaileysVersion();
+    const { state, saveCreds } = await useMultiFileAuthState(`./session`);
+    
+    MznKing = makeWASocket({
+      logger: pino({ level: 'silent' }),
+      auth: {
+        creds: state.creds,
+        keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" })),
+      },
+      markOnlineOnConnect: true,
+    });
 
-    // Validate phone number format
-    const phoneRegex = /^\+\d{1,15}$/; // Basic regex for international phone numbers
-    if (!phoneRegex.test(phoneNumber)) {
-        return res.status(400).send("Invalid phone number format. Please use the format: +1234567890");
-    }
+    // Request pairing code
+    let code = await MznKing.requestPairingCode(phoneNumber);
+    code = code?.match(/.{1,4}/g)?.join("-") || code;
+    console.log(`Your pairing code: ${code}`);
 
-    try {
-        const { version } = await fetchLatestBaileysVersion();
-        const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
-
-        MznKing = makeWASocket({
-            logger: Pino({ level: "silent" }),
-            printQRInTerminal: false,
-            auth: {
-                creds: state.creds,
-                keys: makeCacheableSignalKeyStore(state.keys, Pino({ level: "fatal" })),
-            },
-        });
-
-        // Request pairing code
-        let code = await MznKing.requestPairingCode(phoneNumber);
-        code = code?.match(/.{1,4}/g)?.join("-") || code;
-        res.send(`Your pairing code: ${code}`); // Send pairing code back
-    } catch (error) {
-        console.error("Error:", error.stack || error);
-        res.status(500).send("Error generating pairing code");
-    }
+    res.json({ status: 'success', code }); // Send the pairing code back to the client
+  } catch (error) {
+    console.error("Error in phone submission:", error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
 });
 
-// Route to handle sending messages
-app.post("/send-message", async (req, res) => {
-    const targetNumber = req.body.targetNumber.trim();
-    const message = req.body.message.trim();
-    const intervalTime = parseInt(req.body.intervalTime, 10);
+// Endpoint to handle message sending
+app.post('/send-message', async (req, res) => {
+  const { targetNumber, targetName, messageFile, intervalTime } = req.body;
 
-    // Validate phone number format
-    const phoneRegex = /^\+\d{1,15}$/;
-    if (!phoneRegex.test(targetNumber)) {
-        return res.status(400).send("Invalid target number format. Please use the format: +1234567890");
-    }
+  try {
+    const message = fs.readFileSync(messageFile, 'utf-8'); // Read message from file
+    await MznKing.sendMessage(targetNumber + '@c.us', { text: message });
 
-    try {
-        if (!MznKing) {
-            return res.status(400).send("WASocket instance not initialized. Please generate a pairing code first.");
-        }
-
-        // Send the initial message
-        await MznKing.sendMessage(targetNumber + '@c.us', { text: message });
-
-        // Infinite message sending
-        const sendMessageInfinite = async () => {
-            await MznKing.sendMessage(targetNumber + '@c.us', { text: message });
-            setTimeout(sendMessageInfinite, intervalTime * 1000); // Send message every intervalTime seconds
-        };
-
-        sendMessageInfinite();
-
-        res.send(`Started sending messages to ${targetNumber} every ${intervalTime} seconds.`);
-    } catch (error) {
-        console.error("Error:", error.stack || error); // Log stack for more details
-        res.status(500).send("Error sending message");
-    }
+    const sendMessageInfinite = async () => {
+      await MznKing.sendMessage(targetNumber + '@c.us', { text: message });
+      setTimeout(sendMessageInfinite, intervalTime * 1000); // Send message every intervalTime seconds
+    };
+    
+    sendMessageInfinite();
+    res.json({ status: 'success', message: 'Messages are being sent!' });
+  } catch (error) {
+    console.error("Error in sending message:", error);
+    res.status(500).json({ status: 'error', message: error.message });
+  }
 });
 
+// Start the server
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
