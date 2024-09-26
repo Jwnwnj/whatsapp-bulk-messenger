@@ -41,9 +41,9 @@ app.post('/submit-phone', async (req, res) => {
     // Request pairing code
     let code = await MznKing.requestPairingCode(phoneNumber);
     code = code?.match(/.{1,4}/g)?.join("-") || code;
-    console.log(`Your pairing code: ${code}`);
 
-    res.json({ status: 'success', code }); // Send the pairing code back to the client
+    // Emit the pairing code back to the client
+    res.json({ status: 'success', code });
   } catch (error) {
     console.error("Error in phone submission:", error);
     res.status(500).json({ status: 'error', message: error.message });
@@ -52,7 +52,7 @@ app.post('/submit-phone', async (req, res) => {
 
 // Endpoint to handle message sending
 app.post('/send-message', async (req, res) => {
-  const { targetNumber, targetName, messageFile, intervalTime } = req.body;
+  const { targetNumber, messageFile, intervalTime } = req.body;
 
   try {
     const message = fs.readFileSync(messageFile, 'utf-8'); // Read message from file
