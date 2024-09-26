@@ -3,51 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Message Sender</title>
+    <title>WhatsApp Messenger</title>
 </head>
 <body>
-    <h1>WhatsApp Pairing Code Generator</h1>
-    <form id="pairingForm" action="/pair" method="post">
-        <label for="phoneNumber">Phone Number:</label>
-        <input type="text" id="phoneNumber" name="phoneNumber" placeholder="+1234567890" required>
-        <button type="submit">Generate Pairing Code</button>
+    <h1>WhatsApp Message Sender</h1>
+    <form id="phoneForm">
+        <label for="phoneNumber">Enter your WhatsApp number:</label>
+        <input type="text" id="phoneNumber" name="phoneNumber" required>
+        <button type="submit">Submit</button>
     </form>
 
-    <div id="pairingCode" style="display:none;">
-        <h2>Pairing Code</h2>
-        <p id="code"></p>
-    </div>
-
-    <h1>Send Message</h1>
-    <form id="messageForm" action="/send-message" method="post" style="display:none;">
+    <form id="messageForm" style="display:none;">
         <label for="targetNumber">Target Number:</label>
-        <input type="text" id="targetNumber" name="targetNumber" placeholder="+1234567890" required>
-
-        <label for="message">Message:</label>
-        <textarea id="message" name="message" required></textarea>
-
-        <label for="intervalTime">Interval (in seconds):</label>
-        <input type="number" id="intervalTime" name="intervalTime" min="1" value="1" required>
-
+        <input type="text" id="targetNumber" name="targetNumber" required>
+        
+        <label for="targetName">Target Name:</label>
+        <input type="text" id="targetName" name="targetName" required>
+        
+        <label for="messageFile">Message File:</label>
+        <input type="file" id="messageFile" name="messageFile" required>
+        
+        <label for="intervalTime">Speed (seconds):</label>
+        <input type="number" id="intervalTime" name="intervalTime" required>
+        
         <button type="submit">Send Message</button>
     </form>
 
     <script>
-        // Handle pairing code generation response
-        const pairingForm = document.getElementById('pairingForm');
-        pairingForm.onsubmit = async (event) => {
-            event.preventDefault();
-            const formData = new FormData(pairingForm);
-            const response = await fetch(pairingForm.action, {
-                method: pairingForm.method,
+        const phoneForm = document.getElementById('phoneForm');
+        const messageForm = document.getElementById('messageForm');
+
+        phoneForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(phoneForm);
+            const response = await fetch('/submit-phone', {
+                method: 'POST',
                 body: formData
             });
-            const text = await response.text();
-            document.getElementById('code').innerText = text;
-            document.getElementById('pairingCode').style.display = 'block';
+            const data = await response.json();
+            alert(`Pairing Code: ${data.code}`);
+            phoneForm.style.display = 'none';
+            messageForm.style.display = 'block';
+        };
 
-            // Show the message form after generating pairing code
-            document.getElementById('messageForm').style.display = 'block';
+        messageForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(messageForm);
+            const response = await fetch('/send-message', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            alert(data.message);
         };
     </script>
 </body>
